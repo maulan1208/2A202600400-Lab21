@@ -80,10 +80,13 @@ jobs:
           # Ép DVC sử dụng file key này cho remote 'storage' (tên remote bạn đặt khi setup DVC)
           # Sử dụng --local để không ghi đè vào file dvc config chính
           dvc remote modify myremote credentialpath /tmp/sa-key.json --local
-          
+
           dvc pull data/train_phase1.csv.dvc data/eval.csv.dvc
       - name: Train model
-        run: python src/train.py
+        run: 
+          rm -rf mlruns
+          
+          python src/train.py
 
       - name: Read metrics
         id: read_metrics
