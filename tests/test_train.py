@@ -1,5 +1,7 @@
 import os
 import json
+from pathlib import Path
+import mlflow
 import numpy as np
 import pandas as pd
 from src.train import train
@@ -21,45 +23,39 @@ def _make_temp_data(tmp_path):
     """
     rng = np.random.default_rng(0)
     n = 200
+    
+    X = rng.random((n, len(FEATURE_NAMES)))
+    
+    y = rng.integers(0, 3, size=n)
+    
+    df = pd.DataFrame(X, columns=FEATURE_NAMES)
+    df["target"] = y
+    
+    train_path = tmp_path / "train.csv"
+    eval_path = tmp_path / "eval.csv"
+    
+    df.iloc[:160].to_csv(train_path, index=False)
+    df.iloc[160:].to_csv(eval_path, index=False)
+    
+    return str(train_path), str(eval_path)
 
-    # TODO 1: Tao mang X co kich thuoc (n, len(FEATURE_NAMES)) voi gia tri [0, 1)
-    # X = rng.random((n, len(FEATURE_NAMES)))
-
-    # TODO 2: Tao mang y gom n phan tu nguyen ngau nhien trong [0, 3)
-    # y = rng.integers(0, 3, size=n)
-
-    # TODO 3: Xay dung DataFrame, them cot "target"
-    # df = pd.DataFrame(X, columns=FEATURE_NAMES)
-    # df["target"] = y
-
-    # TODO 4: Luu 160 dong dau lam tap huan luyen, 40 dong cuoi lam tap danh gia
-    # train_path = str(tmp_path / "train.csv")
-    # eval_path  = str(tmp_path / "eval.csv")
-    # df.iloc[:160].to_csv(train_path, index=False)
-    # df.iloc[160:].to_csv(eval_path,  index=False)
-
-    # TODO 5: Tra ve (train_path, eval_path)
-    # return train_path, eval_path
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
-
-def test_train_returns_float(tmp_path):
+def test_train_returns_float(tmp_path: Path):
     """Kiem tra ham train() tra ve mot so thuc nam trong [0.0, 1.0]."""
+
+    mlflow.set_tracking_uri(f"file:///{tmp_path}/mlruns")
     train_path, eval_path = _make_temp_data(tmp_path)
+    
+    accuracy = train(
+        {"n_estimators": 10, "max_depth": 3},
+        data_path=train_path,
+        eval_path=eval_path,
+    )
+    
+    assert isinstance(accuracy, float)
+    assert 0.0 <= accuracy <= 1.0
 
-    # TODO 6: Goi ham train() voi sieu tham so nho (n_estimators=10, max_depth=3)
-    # va cac duong dan file vua tao
-    # acc = train({"n_estimators": 10, "max_depth": 3}, ...)
 
-    # TODO 7: Kiem tra ket qua
-    # assert isinstance(acc, float)
-    # assert 0.0 <= acc <= 1.0
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
-
-def test_metrics_file_created(tmp_path):
+def test_metrics_file_created(tmp_path: Path):
     """Kiem tra file outputs/metrics.json duoc tao sau khi huan luyen."""
     train_path, eval_path = _make_temp_data(tmp_path)
     train(
@@ -67,18 +63,16 @@ def test_metrics_file_created(tmp_path):
         data_path=train_path,
         eval_path=eval_path,
     )
+    
+    metrics_file = "outputs/metrics.json"
+    assert os.path.exists(metrics_file)
+    
+    with open(metrics_file, "r") as f:
+        data = json.load(f)
+        assert "accuracy" in data
+        assert "f1_score" in data
 
-    # TODO 8: Kiem tra file ton tai va noi dung dung dinh dang
-    # assert os.path.exists("outputs/metrics.json")
-    # with open("outputs/metrics.json") as f:
-    #     metrics = json.load(f)
-    # assert "accuracy" in metrics
-    # assert "f1_score" in metrics
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
-
-def test_model_file_created(tmp_path):
+def test_model_file_created(tmp_path: Path):
     """Kiem tra file models/model.pkl duoc tao sau khi huan luyen."""
     train_path, eval_path = _make_temp_data(tmp_path)
     train(
@@ -87,7 +81,5 @@ def test_model_file_created(tmp_path):
         eval_path=eval_path,
     )
 
-    # TODO 9: Kiem tra file model ton tai
-    # assert os.path.exists("models/model.pkl")
+    assert os.path.exists("models/model.pkl")
 
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren

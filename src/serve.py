@@ -18,25 +18,27 @@ def download_model():
     Ham nay duoc goi mot lan khi module duoc import. Su dung
     GOOGLE_APPLICATION_CREDENTIALS de xac thuc (duoc dat trong systemd service).
     """
-    # TODO 1: Tao storage.Client()
-    # client = storage.Client()
-
-    # TODO 2: Lay bucket va blob tuong ung
-    # bucket = client.bucket(GCS_BUCKET)
-    # blob   = bucket.blob(GCS_MODEL_KEY)
-
-    # TODO 3: Tai file model xuong may
-    # blob.download_to_filename(MODEL_PATH)
-
-    # TODO 4: In thong bao thanh cong
-    # print("Model da duoc tai xuong tu GCS.")
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    print(f"Đang tải model từ bucket {GCS_BUCKET}...")
+    try:
+        # TODO 2.6.1 -> 2.6.4
+        client = storage.Client()
+        bucket = client.bucket(GCS_BUCKET)
+        blob = bucket.blob(GCS_MODEL_KEY)
+        
+        # Tạo thư mục models nếu chưa có
+        os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+        
+        blob.download_to_filename(MODEL_PATH)
+        print(f"--- Tải model thành công: {MODEL_PATH} ---")
+    except Exception as e:
+        print(f"Lỗi khi tải model: {e}")
+        # Nếu lỗi tải từ Cloud, kiểm tra xem có file local cũ không
+        if not os.path.exists(MODEL_PATH):
+             raise e
 
 
 download_model()
 model = joblib.load(MODEL_PATH)
-
 
 class PredictRequest(BaseModel):
     features: list[float]
@@ -50,8 +52,7 @@ def health():
 
     Tra ve: {"status": "ok"}
     """
-    # TODO 5: Tra ve dict {"status": "ok"}
-    pass  # xoa dong nay sau khi hoan thanh
+    return {"status": "ok"}
 
 
 @app.post("/predict")
@@ -67,18 +68,20 @@ def predict(req: PredictRequest):
         chlorides, free_sulfur_dioxide, total_sulfur_dioxide, density,
         pH, sulphates, alcohol, wine_type
     """
-    # TODO 6: Kiem tra so luong dac trung.
-    # Neu len(req.features) != 12, raise HTTPException(status_code=400, ...)
+    if len(req.features) != 12:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cần chính xác 12 đặc trưng. Bạn đang gửi {len(req.features)}."
+        )
 
-    # TODO 7: Goi model.predict([req.features]) de lay ket qua du doan.
-    # pred = model.predict(...)
+    prediction = int(model.predict([req.features])[0])
 
-    # TODO 8: Tra ve dict chua "prediction" (int) va "label" (string).
-    # Nhan tuong ung: 0 -> "thap", 1 -> "trung_binh", 2 -> "cao"
-    # return {"prediction": ..., "label": ...}
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
-
+    labels = {0: "thấp", 1: "trung_bình", 2: "cao"}
+    
+    return {
+        "prediction": prediction,
+        "label": labels.get(prediction, "không xác định")
+    }
 
 if __name__ == "__main__":
     import uvicorn

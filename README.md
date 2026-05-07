@@ -258,7 +258,7 @@ Nộp các hạng mục sau:
    - Cloud Storage Console hiển thị các file dữ liệu và model đã được push lên.
 3. File báo cáo ngắn (không quá 1 trang A4) ghi lại:
    - Bộ siêu tham số đã chọn và lý do (kết quả Bước 1).
-   - Bất kỳ khó khăn nào gặp phải và cách giải quyết.
+   - Bất kỳ khó khăn nào gặp phải `và cách giải quyết.
 
 ---
 
