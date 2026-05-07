@@ -44,6 +44,8 @@ jobs:
     name: Train
     needs: test
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa-key.json
     outputs:
       accuracy: ${{ steps.read_metrics.outputs.accuracy }}
 
